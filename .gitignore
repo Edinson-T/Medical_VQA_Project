@@ -1,0 +1,16 @@
+results/
+checkpoints/
+*.safetensors
+*.pt
+*.pth
+*.bin
+*.h5
+*.ckpt
+*.ftz
+
+*.log
+*.out
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+Thumbs.db
