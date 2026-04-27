@@ -383,3 +383,8 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
+
+# python web_demo.py --backend hf --checkpoint-path "Qwen/Qwen3.5-0.8B" --server-port 7861
+# python web_demo.py --backend hf --checkpoint-path "./results/Qwen3.5_0.8b/merged_model" --server-port 7860
