@@ -248,8 +248,16 @@ def _launch_demo(args, model, processor, backend):
 
         def predict(_chatbot, task_history):
             nonlocal model, processor, backend
-            chat_query = _chatbot[-1]["content"]
-            query = task_history[-1][0]
+            # 从字典中获取最后一条用户消息的文本（如果有图片，则内容为列表）
+            last_msg = _chatbot[-1]
+            # 提取用户查询文本（可能存在于 content 列表的 text 项中）
+            chat_query = ""
+            if isinstance(last_msg["content"], list):
+                for item in last_msg["content"]:
+                    if item["type"] == "text":
+                        chat_query = item["text"]
+                        break
+            query = task_history[-1][0] if task_history else ""
             if len(chat_query) == 0:
                 _chatbot.pop()
                 task_history.pop()
@@ -261,6 +269,7 @@ def _launch_demo(args, model, processor, backend):
             content = []
             for q, a in history_cp:
                 if isinstance(q, (tuple, list)):
+                    # 文件路径（图片或视频）
                     if _is_video_file(q[0]):
                         content.append({'video': f'{os.path.abspath(q[0])}'})
                     else:
@@ -270,8 +279,10 @@ def _launch_demo(args, model, processor, backend):
                     messages.append({'role': 'user', 'content': content})
                     messages.append({'role': 'assistant', 'content': [{'text': a}]})
                     content = []
-            messages.pop()
-
+            # 移除预先添加的空 assistant 占位，然后重建
+            if messages and messages[-1]['role'] == 'assistant':
+                messages.pop()
+            # 追加一个空的 assistant 消息，用于流式更新
             _chatbot.append({"role": "assistant", "content": ""})
 
             for response in call_local_model(model, processor, messages, backend):
@@ -296,12 +307,9 @@ def _launch_demo(args, model, processor, backend):
             if item[1] is None:
                 return _chatbot
             task_history[-1] = (item[0], None)
-
+            # 移除最后一条 assistant 消息
             if _chatbot and _chatbot[-1]["role"] == "assistant":
                 _chatbot.pop(-1)
-            # 如果最后一条是用户消息，则什么都不做（之后 predict 会追加新的 assistant 消息）
-
-            # 调用 predict 重新生成回答
             _chatbot_gen = predict(_chatbot, task_history)
             for _chatbot in _chatbot_gen:
                 yield _chatbot
@@ -315,15 +323,17 @@ def _launch_demo(args, model, processor, backend):
         history = history if history is not None else []
         task_history = task_history if task_history is not None else []
         # 添加用户消息为字典（Gradio 新格式）
-        history.append({"role": "user", "content": text})
+        history.append({"role": "user", "content": [{"type": "text", "text": text}]})
         task_history.append((text, None))   # task_history 保持内部格式
         return history, task_history
 
     def add_file(history, task_history, file):
         history = history if history is not None else []
         task_history = task_history if task_history is not None else []
-        history = history + [((file.name,), None)]
-        task_history = task_history + [((file.name,), None)]
+        # 用 Markdown 图片链接在聊天窗口中渲染图片
+        img_markdown = f"![Uploaded Image](file={file.name})"
+        history.append({"role": "user", "content": img_markdown})
+        task_history.append(((file.name,), None))  # 内部仍保存路径，供 predict 使用
         return history, task_history
 
     def reset_user_input():

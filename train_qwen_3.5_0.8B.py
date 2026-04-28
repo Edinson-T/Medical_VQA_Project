@@ -1,3 +1,4 @@
+import gc
 import os
 import random
 import numpy as np
@@ -17,15 +18,17 @@ import time
 import matplotlib
 import matplotlib.pyplot as plt
 import json
+
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
 matplotlib.use("Agg")
 
 # ==================== Configuration ====================
 MODEL_ID = "Qwen/Qwen3.5-0.8B"  
-BATCH_SIZE = 4
-GRADIENT_ACCUMULATION_STEPS = 1
+BATCH_SIZE = 2
+GRADIENT_ACCUMULATION_STEPS = 2
 LEARNING_RATE = 8e-5                   
 NUM_EPOCHS = 3
-MAX_SAMPLES = 100  # It is recommended to set this to a small number (e.g., 100) for quick testing. Set to None to use the full dataset.                       
+MAX_SAMPLES = None # It is recommended to set this to a small number (e.g., 100) for quick testing. Set to None to use the full dataset.                       
 LORA_RANK = 8                           
 LORA_ALPHA = 16   # alpha = 2*rank
 LORA_DROPOUT = 0.1
@@ -110,7 +113,7 @@ split_idx = len(test_split) // 2
 val_split = test_split.select(range(split_idx))
 test_split = test_split.select(range(split_idx, len(test_split)))
 
-print(f"Train: {len(train_split)} | Val: {len(val_split)} | Test: {len(test_split)}")
+print(f"Train: {len(train_split)} | Val: {len(val_split)} | Test: {len(test_split)}")  #Train: 1793 | Val: 225 | Test: 226
 
 class MedicalVQADataset(Dataset):
     def __init__(self, hf_dataset, processor, max_samples=None):
@@ -339,10 +342,12 @@ train_step_losses_all = []
 val_step_losses_all = []
 
 for epoch in range(NUM_EPOCHS):
+    gc.collect()
+    torch.cuda.empty_cache()
+    
     torch.cuda.reset_peak_memory_stats()
     epoch_start = time.time()
 
-    torch.cuda.empty_cache()
     train_avg, train_steps = train_one_epoch(model, train_loader, optimizer, device, epoch)
     val_avg, val_steps = validate_one_epoch(model, val_loader, device, epoch)
 
@@ -364,7 +369,7 @@ for epoch in range(NUM_EPOCHS):
         best_val_loss = val_avg
         model.save_pretrained(os.path.join(OUTPUT_DIR, "best_model"))
         processor.save_pretrained(os.path.join(OUTPUT_DIR, "best_model"))
-        print(f"  ✓ Best model saved (val_loss={val_avg:.4f})")
+        print(f"Best model saved (val_loss={val_avg:.4f})")
 
     # save checkpoint per epoch
     ckpt_path = os.path.join(CHECKPOINT_DIR, f"epoch_{epoch+1}")
