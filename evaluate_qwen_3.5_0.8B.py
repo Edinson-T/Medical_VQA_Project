@@ -23,13 +23,16 @@ from transformers import AutoModelForImageTextToText, AutoProcessor
 from peft import PeftModel
 from datasets import load_dataset
 from tqdm import tqdm
+import re
+from evaluate import load
+bertscore = load("bertscore")
 
 # ============================================================================
 # Configuration
 # ============================================================================
 MODEL_ID = "Qwen/Qwen3.5-0.8B"                 # Base model identifier
 LORA_PATH = "./results/Qwen3.5_0.8b/best_model" # Path to QLoRA adapter
-TEST_SAMPLES = 226                              # Number of test samples to evaluate  Train: 1793 | Val: 225 | Test: 226
+TEST_SAMPLES = 50                              # Number of test samples to evaluate  Train: 1793 | Val: 225 | Test: 226
 OUTPUT_DIR = "./results/Qwen3.5_0.8b"           # Directory for evaluation outputs
 
 # Path to the official VQA-RAD metadata JSON (local file)
@@ -39,7 +42,9 @@ LOCAL_JSON_PATH = r"D:\1MA2Semester\ML&BDP\Medical_vqa_project\VQA_RAD_Dataset_P
 # Metadata loading and merging
 # ============================================================================
 def load_local_metadata(json_path):
-    """Load the full VQA-RAD metadata from a local JSON file."""
+    """
+    Load the full VQA-RAD metadata from a local JSON file.
+    """
     print(f"Loading metadata from local file: {json_path}")
     with open(json_path, "r", encoding="utf-8") as f:
         metadata = json.load(f)
@@ -110,8 +115,8 @@ def build_inputs(processor, image, question, answer_type="OPEN"):
     """
     Build model inputs from an image and a question.
 
-    For closed-ended questions (answer_type == "CLOSED"), an explicit
-    instruction is appended to encourage a short yes/no answer.
+    For closed-ended questions (answer_type == "CLOSED"), a prompt is
+    appended to encourage a short yes/no answer.
     """
     if answer_type == "CLOSED":
         # Force model to output only yes/no
@@ -143,6 +148,13 @@ def build_inputs(processor, image, question, answer_type="OPEN"):
     inputs = {k: v.cuda() if isinstance(v, torch.Tensor) else v for k, v in inputs.items()}
     return inputs
 
+def clean_think_tags(text):
+    """
+    Remove <think>...</think> blocks and surrounding whitespace.
+    """
+    cleaned = re.sub(r'<think>.*?</think>\n*', '', text, flags=re.DOTALL)
+    return cleaned.strip()
+
 def generate_answer(model, processor, inputs, answer_type="OPEN"):
     """
     Generate an answer from the model.
@@ -172,6 +184,7 @@ def generate_answer(model, processor, inputs, answer_type="OPEN"):
         predicted = predicted.split("assistant")[-1].strip()
     # Remove trailing punctuation/periods
     predicted = predicted.strip().rstrip('.').rstrip('。')
+    predicted = clean_think_tags(predicted)
     return predicted
 
 def closed_accuracy(pred, gt):
@@ -197,18 +210,17 @@ def closed_accuracy(pred, gt):
 
     return False
 
-def open_accuracy(pred, gt):
+def open_accuracy(pred, gt, threshold=0.8):
     """
-    Evaluate open-ended questions.
-
-    Criterion: at least 50% of the ground-truth words must appear in the prediction.
+    Evaluate open-ended questions using BERTScore F1.
+    Returns True if F1 >= threshold, False otherwise.
     """
-    pred_words = set(pred.lower().split())
-    gt_words = set(gt.lower().split())
-    if len(gt_words) == 0:
+    if not pred.strip() or not gt.strip():
         return False
-    overlap = len(pred_words & gt_words) / len(gt_words)
-    return overlap >= 0.5
+    results = bertscore.compute(
+        predictions=[pred], references=[gt], lang="en"
+    )
+    return results["f1"][0] >= threshold
 
 # ============================================================================
 # Main evaluation loop
@@ -371,7 +383,7 @@ finetuned_results = evaluate_model(finetuned_model, processor, test_samples, mod
 # 3. Save results to JSON
 # ============================================================================
 os.makedirs(OUTPUT_DIR, exist_ok=True)
-output_path = os.path.join(OUTPUT_DIR, "eval_results_local.json")
+output_path = os.path.join(OUTPUT_DIR, "eval_results_0.8B.json")
 combined = {
     "zero_shot": zero_shot_results,
     "finetuned": finetuned_results,
