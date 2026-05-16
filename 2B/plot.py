@@ -7,6 +7,7 @@ import os
 import json
 import matplotlib
 matplotlib.use("Agg")
+from matplotlib import ticker
 import matplotlib.pyplot as plt
 import torch
 from matplotlib.lines import Line2D
@@ -20,23 +21,40 @@ def load_json(path):
         return json.load(f)
 
 
-def plot_loss_curves(train_losses, val_losses, fig_dir):
-    """Plot average training and validation loss per epoch."""
+def plot_loss_and_acc(train_losses, val_losses, val_acc, fig_dir):
+    """Combined chart: training & validation loss (left y-axis)
+       and validation closed-ended accuracy (right y-axis)."""
     epochs = list(range(1, len(train_losses) + 1))
-    fig, ax = plt.subplots()
-    ax.plot(epochs, train_losses, marker='o', label='Train Loss', color='tab:blue')
-    ax.plot(epochs, val_losses, marker='s', label='Val Loss', color='tab:red')
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel("Loss")
-    ax.set_title("Training and Validation Loss per Epoch")
-    ax.legend()
-    ax.grid(True, alpha=0.3)
+    fig, ax1 = plt.subplots()
+
+    # Loss curves on left y-axis
+    ax1.plot(epochs, train_losses, marker='o', label='Train Loss', color='tab:blue')
+    ax1.plot(epochs, val_losses, marker='s', label='Val Loss', color='tab:red')
+    ax1.set_xlabel("Epoch")
+    ax1.set_ylabel("Loss", color='black')
+    ax1.tick_params(axis='y', labelcolor='black')
+    ax1.grid(True, alpha=0.3)
+
+    # Accuracy curve on right y-axis
+    ax2 = ax1.twinx()
+    ax2.plot(epochs, [v * 100 for v in val_acc], marker='D', color='green',
+             linestyle='--', label='Val Closed Acc')
+    ax2.set_ylabel("Accuracy (%)", color='green')
+    ax2.tick_params(axis='y', labelcolor='green')
+
+    # Combine legends
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax2.legend(lines1 + lines2, labels1 + labels2, loc='center right')
+
+    ax1.xaxis.set_major_locator(ticker.MaxNLocator(integer=True))
+
+    plt.title("Training Loss, Validation Loss and Closed Accuracy")
     plt.tight_layout()
-    path = os.path.join(fig_dir, "loss_curve.png")
+    path = os.path.join(fig_dir, "loss_and_acc.png")
     plt.savefig(path, dpi=150)
     plt.close()
     print(f"Saved {path.replace(os.sep, '/')}")
-
 
 def plot_time_bar(epoch_times, epoch_memory_MB, fig_dir):
     """Plot training time per epoch with attached data table."""
@@ -50,12 +68,6 @@ def plot_time_bar(epoch_times, epoch_memory_MB, fig_dir):
     for i, v in enumerate(epoch_times):
         ax.text(i + 1, v + 2, f"{v:.1f}s", ha="center", fontsize=9)
 
-    table_data = [["Epoch", "Time (s)", "VRAM Peak (MB)"]]
-    for ep, t, m in zip(epochs, epoch_times, epoch_memory_MB):
-        table_data.append([str(ep), f"{t:.1f}", f"{m:.0f}"])
-    ax.table(cellText=table_data, cellLoc="center",
-             colWidths=[0.15, 0.2, 0.2],
-             bbox=[0.1, -0.5, 0.8, 0.4])
     ax.set_ylim(0, max(epoch_times) * 1.3)
     plt.tight_layout()
     path = os.path.join(fig_dir, "training_time.png")
@@ -84,35 +96,6 @@ def plot_vram_breakdown(model_loaded_mb, train_peak_mb, fig_dir):
     plt.savefig(path, dpi=150)
     plt.close()
     print(f"Saved {path.replace(os.sep, '/')}")
-
-
-def plot_step_losses(train_step_losses, val_step_losses, fig_dir):
-    """Plot fine-grained step-level loss curves with improved colors and legend."""
-    fig, ax = plt.subplots(figsize=(10, 5))
-
-    for ep_idx, steps in enumerate(train_step_losses):
-        xs = [ep_idx + (i / (len(steps) or 1)) for i in range(len(steps))]
-        ax.plot(xs, steps, alpha=0.8, linewidth=0.5, color='tab:blue')
-
-    for ep_idx, steps in enumerate(val_step_losses):
-        xs = [ep_idx + (i / (len(steps) or 1)) for i in range(len(steps))]
-        ax.plot(xs, steps, alpha=0.8, linewidth=0.5, color='tab:red')
-
-    legend_elements = [
-        Line2D([0], [0], color='tab:blue', lw=1, label='Training loss (per step)'),
-        Line2D([0], [0], color='tab:red', lw=1, label='Validation loss (per step)'),
-    ]
-    ax.legend(handles=legend_elements, loc='upper right')
-    ax.set_xlabel("Epoch")
-    ax.set_ylabel("Loss")
-    ax.set_title("Step-level Training and Validation Loss (All Epochs)")
-    ax.grid(True, alpha=0.3)
-    plt.tight_layout()
-    path = os.path.join(fig_dir, "loss_steps.png")
-    plt.savefig(path, dpi=150)
-    plt.close()
-    print(f"Saved {path.replace(os.sep, '/')}")
-
 
 def plot_accuracy_comparison(eval_data, fig_dir):
     """Grouped bar chart: Zero-shot vs Fine-tuned accuracy (overall, closed, open)."""
@@ -190,7 +173,7 @@ def plot_modality_heatmap(eval_data, fig_dir):
 
 def main():
     # Adjust to your actual result folder
-    result_dir = "./results/Qwen3.5_0.8b"
+    result_dir = "./results/Qwen3.5_2B"
     fig_dir = os.path.join(result_dir, "figures")
     os.makedirs(fig_dir, exist_ok=True)
 
@@ -204,18 +187,18 @@ def main():
         epoch_memory_MB = stats.get("epoch_memory_MB", [])
         train_losses = stats.get("train_losses_epoch", [])
         val_losses = stats.get("val_losses_epoch", [])
-        train_step_losses = stats.get("train_step_losses", [])
-        val_step_losses = stats.get("val_step_losses", [])
+        val_closed_acc = stats.get("val_closed_acc", None)
         model_loaded_vram = stats.get("model_loaded_vram_mb", None)
 
-        if train_losses and val_losses:
-            plot_loss_curves(train_losses, val_losses, fig_dir)
+        if train_losses and val_losses and val_closed_acc:
+            plot_loss_and_acc(train_losses, val_losses, val_closed_acc, fig_dir)
 
         if epoch_times:
             plot_time_bar(epoch_times, epoch_memory_MB, fig_dir)
 
         if model_loaded_vram is not None and epoch_memory_MB:
             plot_vram_breakdown(model_loaded_vram, epoch_memory_MB[-1], fig_dir)
+            
         elif epoch_memory_MB:
             # Fallback: only training peak (old format)
             total_mb = torch.cuda.get_device_properties(0).total_memory / (1024 ** 2)
@@ -231,11 +214,9 @@ def main():
             plt.close()
             print(f"Saved {path.replace(os.sep, '/')} (legacy VRAM pie)")
 
-        if train_step_losses and val_step_losses:
-            plot_step_losses(train_step_losses, val_step_losses, fig_dir)
 
     # Load evaluation results (optional)
-    eval_path = os.path.join(result_dir, "eval_results.json")
+    eval_path = os.path.join(result_dir, "eval_results_2B.json")
     eval_data = load_json(eval_path)
     if eval_data:
         plot_accuracy_comparison(eval_data, fig_dir)

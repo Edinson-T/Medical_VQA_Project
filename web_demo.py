@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 from threading import Thread
 
 import gradio as gr
+from gradio_client import file
 import torch
 from transformers import AutoProcessor, AutoModelForImageTextToText, TextIteratorStreamer
 
@@ -330,10 +331,13 @@ def _launch_demo(args, model, processor, backend):
     def add_file(history, task_history, file):
         history = history if history is not None else []
         task_history = task_history if task_history is not None else []
-        # 用 Markdown 图片链接在聊天窗口中渲染图片
-        img_markdown = f"![Uploaded Image](file={file.name})"
-        history.append({"role": "user", "content": img_markdown})
-        task_history.append(((file.name,), None))  # 内部仍保存路径，供 predict 使用
+        # 改之前: history.append({"role": "user", "content": img_markdown})
+        # 改之后: 用 messages 格式的 image 类型
+        history.append({
+            "role": "user",
+            "content": [{"type": "image", "path": file.name}]
+        })
+        task_history.append(((file.name,), None))
         return history, task_history
 
     def reset_user_input():
@@ -345,16 +349,28 @@ def _launch_demo(args, model, processor, backend):
         _gc()
         return []
 
+    def add_paste(history, task_history, image_path):
+        if image_path is None:
+            return history, task_history, None
+        history = history if history is not None else []
+        task_history = task_history if task_history is not None else []
+        history.append({
+            "role": "user",
+            "content": [{"type": "image", "path": image_path}]
+        })
+        task_history.append(((image_path,), None))
+        return history, task_history, None   # None 清空 paste_box
+
     with gr.Blocks() as demo:
         gr.Markdown("""\
-<p align="center"><img src="https://qianwen-res.oss-accelerate.aliyuncs.com/Qwen3-VL/qwen3vllogo.png" style="height: 80px"/><p>"""
+<p align="center"><img src="https://qianwen-res.oss-accelerate.aliyuncs.com/Qwen3.5/qwen3.5logo.png" style="height: 80px"/><p>"""
                    )
-        gr.Markdown("""<center><font size=8>Qwen3-VL</center>""")
+        gr.Markdown("""<center><font size=8>Qwen3.5</center>""")
         gr.Markdown(f"""\
-<center><font size=3>This WebUI is based on Qwen3-VL, developed by Alibaba Cloud. Backend: {backend.upper()}</center>""")
-        gr.Markdown(f"""<center><font size=3>本 WebUI 基于 Qwen3-VL。</center>""")
+<center><font size=3>This WebUI is based on Qwen3.5, developed by Alibaba Cloud. Backend: {backend.upper()}</center>""")
+        gr.Markdown(f"""<center><font size=3>本 WebUI 基于 Qwen3.5。</center>""")
 
-        chatbot = gr.Chatbot(label='Qwen3-VL', elem_classes='control-height', height=500)
+        chatbot = gr.Chatbot(label='Qwen3.5', elem_classes='control-height', height=500)
         query = gr.Textbox(lines=2, label='Input')
         task_history = gr.State([])
 
@@ -363,13 +379,22 @@ def _launch_demo(args, model, processor, backend):
             submit_btn = gr.Button('🚀 Submit (发送)')
             regen_btn = gr.Button('🤔️ Regenerate (重试)')
             empty_bin = gr.Button('🧹 Clear History (清除历史)')
+        
+        paste_box = gr.Image(
+            sources=["clipboard"],   # 只允许剪贴板来源
+            type="filepath",
+            label="📋 Ctrl+V 粘贴图片到这里",
+            height=80,
+            show_label=True,
+            interactive=True,
+        )
 
         submit_btn.click(add_text, [chatbot, task_history, query],
                  [chatbot, task_history]).then(reset_user_input, [], [query]).then(predict, [chatbot, task_history], [chatbot], show_progress=True)
         empty_bin.click(reset_state, [chatbot, task_history], [chatbot], show_progress=True)
         regen_btn.click(regenerate, [chatbot, task_history], [chatbot], show_progress=True)
         addfile_btn.upload(add_file, [chatbot, task_history, addfile_btn], [chatbot, task_history], show_progress=True)
-
+        paste_box.change(add_paste, [chatbot, task_history, paste_box], [chatbot, task_history, paste_box], show_progress=True)
         gr.Markdown("""\
 <font size=2>Note: This demo is governed by the original license of Qwen3-VL. \
 We strongly advise users not to knowingly generate or allow others to knowingly generate harmful content, \
@@ -397,4 +422,6 @@ if __name__ == '__main__':
 
 
 # python web_demo.py --backend hf --checkpoint-path "Qwen/Qwen3.5-0.8B" --server-port 7861
-# python web_demo.py --backend hf --checkpoint-path "./results/Qwen3.5_0.8b/merged_model" --server-port 7860
+# python web_demo.py --backend hf --checkpoint-path "./results/Qwen3.5_0.8B/merged_model" --server-port 7860
+
+# python web_demo.py --backend hf --checkpoint-path "./results/Qwen3.5_2B/merged_model" --server-port 7862

@@ -1,5 +1,12 @@
+# Ignore all results and checkpoints but allow specific evaluation outputs
 results/
 checkpoints/
+
+# Exception: keep evaluation results and training stats
+!results/**/eval_results_*.json
+!results/**/training_stats.json
+
+# Ignore model weight files
 *.safetensors
 *.pt
 *.pth
@@ -8,9 +15,31 @@ checkpoints/
 *.ckpt
 *.ftz
 
+# Log files
 *.log
 *.out
+
+# Python bytecode
 __pycache__/
+
+# Jupyter checkpoints
 .ipynb_checkpoints/
+
+# OS generated files
 .DS_Store
 Thumbs.db
+
+# Unsloth compilation cache
+unsloth_compiled_cache/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# IDE settings
+.vscode/
+.idea/
+
+# HuggingFace cache
+.cache/

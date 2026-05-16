@@ -2,9 +2,9 @@ import torch
 from transformers import AutoModelForImageTextToText, AutoProcessor
 from peft import PeftModel
 
-base_model_id = "Qwen/Qwen3.5-0.8B"
-lora_path = "./results/Qwen3.5_0.8b/best_model"
-merged_path = "./results/Qwen3.5_0.8b/merged_model"
+base_model_id = "Qwen/Qwen3.5-2B"
+lora_path = "./checkpoints/Qwen3.5_2B/epoch_3"
+merged_path = "./results/Qwen3.5_2B/merged_model"
 
 # 加载基础模型到 CPU（避免显存不足）
 print("Loading base model...")
