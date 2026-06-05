@@ -11,7 +11,16 @@ Qwen3.5 (0.8B and 2B)
 All models are fine-tuned on [VQA-RAD](https://huggingface.co/datasets/flaviagiammarino/vqa-rad) using QLoRA (4-bit NF4, LoRA r=8, α=16).
 
 ---
+## Key Results
 
+The fine-tuned models demonstrate significant improvements over zero-shot baselines, particularly in clinical reliability.
+
+| Model | Method | Overall Accuracy | Closed-Ended Acc | "No" Recall | Open-Ended BERTScore |
+| :--- | :--- | :---: | :---: | :---: | :---: |
+| **Qwen3.5-0.8B** | Zero-Shot | 54.0% | 59.9% | 72.1% | - |
+| **Qwen3.5-0.8B** | **QLoRA (Ours)** | **58.8%** (+4.9%) | 62.0% | 58.8% | 53.9% |
+| **Qwen3.5-2B** | Zero-Shot | 57.5% | 65.7% | 57.4% | - |
+| **Qwen3.5-2B** | **QLoRA (Ours)** | **64.2%** (+6.6%) | 67.9% | **80.9%** (+23.5%) | **58.4%** |
 ## Repository Structure
 
 ```text
