@@ -6,7 +6,7 @@ Fine-tuning Qwen 3.5 (0.8B and 2B) for radiology Visual Question Answering using
 
 ## Models
 
-Qwen3.5 (0.8B and 2B
+Qwen3.5 (0.8B and 2B)
 
 All models are fine-tuned on [VQA-RAD](https://huggingface.co/datasets/flaviagiammarino/vqa-rad) using QLoRA (4-bit NF4, LoRA r=8, α=16).
 
