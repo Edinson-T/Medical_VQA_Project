@@ -1,15 +1,13 @@
 # Medical VQA with QLoRA
 
-https://github.com/Edinson-T/Medical_VQA_Project\n
 Fine-tuning vision-language models for radiology Visual Question Answering using QLoRA.  
 
 ---
 
 ## Models
 
-| Model  | LM Params |
-| Qwen3.5-0.8B | 0.8B |
-| Qwen3.5-2B  | 2.0B |
+Qwen3.5-0.8B
+Qwen3.5-2B
 
 All models are fine-tuned on [VQA-RAD](https://huggingface.co/datasets/flaviagiammarino/vqa-rad) using QLoRA (4-bit NF4, LoRA r=8, α=16).
 
@@ -70,7 +68,7 @@ python train_qwen_3_5_2B.py
 
 Checkpoints are saved under `./checkpoints/Qwen3.5_2B/`. Training stats (loss, accuracy, VRAM) are logged to `./results/Qwen3.5_2B/training_stats.json`.
 
-The 0.8B script follows the same structure with adjusted batch size (batch=2, grad-accum=4).
+The 0.8B script follows the same structure.
 
 ---
 
@@ -100,11 +98,13 @@ python merge.py
 Then launch the Gradio web demo:
 
 ```bash
-python web_demo.py
+#Port is customized
+python web_demo.py --backend hf --checkpoint-path "Qwen/Qwen3.5-0.8B" --server-port 7861 
+python web_demo.py --backend hf --checkpoint-path "./results/Qwen3.5_0.8B/merged_model" --server-port 7860
+
+python web_demo.py --backend hf --checkpoint-path "./results/Qwen3.5_2B/merged_model" --server-port 7862
+python web_demo.py --backend hf --checkpoint-path "Qwen/Qwen3.5-2B" --server-port 7863
 ```
-
-The demo runs on a single 8 GB GPU and accepts a radiology image + free-text question as input.
-
 ---
 
 ## Dataset
