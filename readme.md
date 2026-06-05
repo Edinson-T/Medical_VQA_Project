@@ -1,6 +1,6 @@
 # Medical VQA with QLoRA
 
-Fine-tuning vision-language models for radiology Visual Question Answering using QLoRA.  
+Fine-tuning Qwen 3.5 (0.8B and 2B) for radiology Visual Question Answering using QLoRA and unsloth.  
 
 ---
 
