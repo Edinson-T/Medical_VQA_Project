@@ -51,7 +51,7 @@ def plot_loss_and_acc(train_losses, val_losses, val_acc, fig_dir):
 
     plt.title("Training Loss, Validation Loss and Closed Accuracy")
     plt.tight_layout()
-    path = os.path.join(fig_dir, "loss_and_acc.png")
+    path = os.path.join(fig_dir, "2B_loss_and_acc.png")
     plt.savefig(path, dpi=150)
     plt.close()
     print(f"Saved {path.replace(os.sep, '/')}")
@@ -70,7 +70,7 @@ def plot_time_bar(epoch_times, epoch_memory_MB, fig_dir):
 
     ax.set_ylim(0, max(epoch_times) * 1.3)
     plt.tight_layout()
-    path = os.path.join(fig_dir, "training_time.png")
+    path = os.path.join(fig_dir, "2B_training_time.png")
     plt.savefig(path, dpi=150, bbox_inches="tight")
     plt.close()
     print(f"Saved {path.replace(os.sep, '/')}")
@@ -92,7 +92,7 @@ def plot_vram_breakdown(model_loaded_mb, train_peak_mb, fig_dir):
            shadow=True, startangle=90)
     ax.set_title(f"GPU VRAM Breakdown (Total: {total_mb:.0f} MB)")
     plt.tight_layout()
-    path = os.path.join(fig_dir, "vram_breakdown.png")
+    path = os.path.join(fig_dir, "2B_vram_breakdown.png")
     plt.savefig(path, dpi=150)
     plt.close()
     print(f"Saved {path.replace(os.sep, '/')}")
@@ -135,40 +135,99 @@ def plot_accuracy_comparison(eval_data, fig_dir):
                     xytext=(0, 3), textcoords="offset points",
                     ha='center', va='bottom', fontsize=8)
     plt.tight_layout()
-    path = os.path.join(fig_dir, "accuracy_comparison.png")
+    path = os.path.join(fig_dir, "2B_accuracy_comparison.png")
     plt.savefig(path, dpi=150)
     plt.close()
     print(f"Saved {path.replace(os.sep, '/')}")
 
-
-def plot_modality_heatmap(eval_data, fig_dir):
-    """Plot per-modality accuracy as a horizontal bar chart for comparison."""
+def plot_organ_comparison(eval_data, fig_dir):
+    """Horizontal bar chart: per-organ accuracy (Zero-shot vs Fine-tuned)."""
     if not eval_data:
         return
-    zero_mod = eval_data.get("zero_shot", {}).get("per_modality_accuracy", {})
-    fine_mod = eval_data.get("finetuned", {}).get("per_modality_accuracy", {})
-    modalities = sorted(set(list(zero_mod.keys()) + list(fine_mod.keys())))
-    if not modalities:
+    zero_org = eval_data.get("zero_shot", {}).get("per_organ_accuracy", {})
+    fine_org = eval_data.get("finetuned", {}).get("per_organ_accuracy", {})
+    organs = sorted(set(list(zero_org.keys()) + list(fine_org.keys())))
+    if not organs:
         return
-    zero_vals = [zero_mod.get(m, 0) * 100 for m in modalities]
-    fine_vals = [fine_mod.get(m, 0) * 100 for m in modalities]
 
-    y = range(len(modalities))
+    zero_vals = [zero_org.get(o, 0) * 100 for o in organs]
+    fine_vals = [fine_org.get(o, 0) * 100 for o in organs]
+
+    y = range(len(organs))
     height = 0.35
     fig, ax = plt.subplots(figsize=(8, 5))
-    ax.barh([i - height/2 for i in y], zero_vals, height, label='Zero-shot', color='#8da0cb')
-    ax.barh([i + height/2 for i in y], fine_vals, height, label='Fine-tuned', color='#fc8d62')
+    ax.barh([i - height/2 for i in y], zero_vals, height,
+            label='Zero-shot', color='#8da0cb')
+    ax.barh([i + height/2 for i in y], fine_vals, height,
+            label='Fine-tuned', color='#fc8d62')
     ax.set_yticks(y)
-    ax.set_yticklabels(modalities)
+    ax.set_yticklabels(organs)
     ax.set_xlabel("Accuracy (%)")
-    ax.set_title("Per-Modality Accuracy Comparison")
+    ax.set_title("Per-Organ Accuracy Comparison")
     ax.legend()
     ax.grid(axis='x', alpha=0.3)
+
+    # Value labels on bars
+    for i, (zv, fv) in enumerate(zip(zero_vals, fine_vals)):
+        ax.text(zv + 1, i - height/2, f'{zv:.1f}', va='center', fontsize=8)
+        ax.text(fv + 1, i + height/2, f'{fv:.1f}', va='center', fontsize=8)
+
     plt.tight_layout()
-    path = os.path.join(fig_dir, "modality_accuracy.png")
+    path = os.path.join(fig_dir, "2B_organ_accuracy.png")
     plt.savefig(path, dpi=150)
     plt.close()
     print(f"Saved {path.replace(os.sep, '/')}")
+
+def plot_question_type_comparison(eval_data, fig_dir, min_samples=5):
+    """Horizontal bar chart: per-question-type accuracy (Zero-shot vs Fine-tuned).
+       Filters out categories with too few samples."""
+    if not eval_data:
+        return
+    zero_qt = eval_data.get("zero_shot", {}).get("per_question_type_accuracy", {})
+    fine_qt = eval_data.get("finetuned", {}).get("per_question_type_accuracy", {})
+
+    details_ft = eval_data.get("finetuned", {}).get("details", [])
+    qt_counts = {}
+    for d in details_ft:
+        qt = d.get("question_type", "other")
+        qt_counts[qt] = qt_counts.get(qt, 0) + 1
+
+    qt_list = [qt for qt in set(list(zero_qt.keys()) + list(fine_qt.keys()))
+               if qt_counts.get(qt, 0) >= min_samples]
+    qt_list.sort(key=lambda qt: fine_qt.get(qt, 0), reverse=True)
+
+    if not qt_list:
+        return
+
+    zero_vals = [zero_qt.get(qt, 0) * 100 for qt in qt_list]
+    fine_vals = [fine_qt.get(qt, 0) * 100 for qt in qt_list]
+
+    y = range(len(qt_list))
+    height = 0.35
+    fig, ax = plt.subplots(figsize=(8, 5))
+    ax.barh([i - height/2 for i in y], zero_vals, height,
+            label='Zero-shot', color='#8da0cb')
+    ax.barh([i + height/2 for i in y], fine_vals, height,
+            label='Fine-tuned', color='#fc8d62')
+    ax.set_yticks(y)
+    ax.set_yticklabels(qt_list)
+    ax.set_xlabel("Accuracy (%)")
+    ax.set_title("Per-Question-Type Accuracy Comparison")
+    ax.legend()
+    ax.grid(axis='x', alpha=0.3)
+
+    # Value labels on bars
+    for i, (zv, fv) in enumerate(zip(zero_vals, fine_vals)):
+        ax.text(zv + 1, i - height/2, f'{zv:.1f}', va='center', fontsize=8)
+        ax.text(fv + 1, i + height/2, f'{fv:.1f}', va='center', fontsize=8)
+
+    plt.tight_layout()
+    path = os.path.join(fig_dir, "2B_question_type_accuracy.png")
+    plt.savefig(path, dpi=150)
+    plt.close()
+    print(f"Saved {path.replace(os.sep, '/')}")
+
+
 
 
 def main():
@@ -220,7 +279,8 @@ def main():
     eval_data = load_json(eval_path)
     if eval_data:
         plot_accuracy_comparison(eval_data, fig_dir)
-        plot_modality_heatmap(eval_data, fig_dir)
+        plot_organ_comparison(eval_data, fig_dir)                  
+        plot_question_type_comparison(eval_data, fig_dir, min_samples=15) 
 
     print("All done.")
 

@@ -2,6 +2,14 @@
 #
 # This source code is licensed under the license found in the
 # LICENSE file in the root directory of this source tree.
+
+#------------------------------------------------------------------------------------------------------------------
+#
+# python web_demo.py --backend hf --checkpoint-path "Qwen/Qwen3.5-0.8B" --server-port 7861
+# python web_demo.py --backend hf --checkpoint-path "./results/Qwen3.5_0.8B/merged_model" --server-port 7860
+
+# python web_demo.py --backend hf --checkpoint-path "./results/Qwen3.5_2B/merged_model" --server-port 7862
+# python web_demo.py --backend hf --checkpoint-path "Qwen/Qwen3.5-2B" --server-port 7863
 import os
 import copy
 import re
@@ -363,14 +371,14 @@ def _launch_demo(args, model, processor, backend):
 
     with gr.Blocks() as demo:
         gr.Markdown("""\
-<p align="center"><img src="https://qianwen-res.oss-accelerate.aliyuncs.com/Qwen3.5/qwen3.5logo.png" style="height: 80px"/><p>"""
+<p align="center"><img src="https://qianwen-res.oss-accelerate.aliyuncs.com/Qwen3.0/qwen3.0logo.png" style="height: 80px"/><p>"""
                    )
-        gr.Markdown("""<center><font size=8>Qwen3.5</center>""")
+        gr.Markdown("""<center><font size=8>Qwen3.0</center>""")
         gr.Markdown(f"""\
-<center><font size=3>This WebUI is based on Qwen3.5, developed by Alibaba Cloud. Backend: {backend.upper()}</center>""")
-        gr.Markdown(f"""<center><font size=3>本 WebUI 基于 Qwen3.5。</center>""")
+<center><font size=3>This WebUI is based on Qwen3.0, developed by Alibaba Cloud. Backend: {backend.upper()}</center>""")
+        gr.Markdown(f"""<center><font size=3>本 WebUI 基于 Qwen3.0。</center>""")
 
-        chatbot = gr.Chatbot(label='Qwen3.5', elem_classes='control-height', height=500)
+        chatbot = gr.Chatbot(label='Qwen3.0', elem_classes='control-height', height=500)
         query = gr.Textbox(lines=2, label='Input')
         task_history = gr.State([])
 
@@ -425,3 +433,4 @@ if __name__ == '__main__':
 # python web_demo.py --backend hf --checkpoint-path "./results/Qwen3.5_0.8B/merged_model" --server-port 7860
 
 # python web_demo.py --backend hf --checkpoint-path "./results/Qwen3.5_2B/merged_model" --server-port 7862
+# python web_demo.py --backend hf --checkpoint-path "Qwen/Qwen3.5-2B" --server-port 7863

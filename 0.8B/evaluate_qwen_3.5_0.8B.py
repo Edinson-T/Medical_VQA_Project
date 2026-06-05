@@ -34,7 +34,7 @@ OUTPUT_DIR = "./results/Qwen3.5_0.8B"
 LOCAL_JSON_PATH = r"D:\1MA2Semester\ML&BDP\Medical_vqa_project\VQA_RAD_Dataset_Public.json"
 
 BERTSCORE_THRESHOLD = 0.85   # BERTScore F1 >= threshold → correct
-MIN_QT_SAMPLES    = 5     # skip question-type categories with fewer samples
+MIN_QT_SAMPLES    = 13     # skip question-type categories with fewer samples
 
 # ============================================================================
 # Metadata helpers
@@ -314,11 +314,9 @@ def evaluate_model(model, processor, samples, model_name="Model"):
             yt, yp, labels=["yes", "no"], target_names=["Yes", "No"],
             output_dict=False, zero_division=0,
         )
-        closed_macro_f1 = report_dict["macro avg"]["f1-score"]
         recall_no       = report_dict["No"]["recall"]
     else:
         closed_report   = "N/A"
-        closed_macro_f1 = 0.0
         recall_no       = 0.0
 
     # ── Console output ────────────────────────────────────────────────────────
@@ -343,7 +341,6 @@ def evaluate_model(model, processor, samples, model_name="Model"):
         "model_name":                 model_name,
         "overall_accuracy":           overall_acc,
         "closed_accuracy":            closed_acc,
-        "closed_macro_f1":            closed_macro_f1,
         "closed_recall_no":           recall_no,
         "open_accuracy":              open_acc,
         "open_f1_mean":               open_f1_mean,
@@ -411,7 +408,6 @@ print("-" * 60)
 rows = [
     ("Overall Accuracy",     zs["overall_accuracy"],   ft["overall_accuracy"]),
     ("Closed Accuracy",      zs["closed_accuracy"],    ft["closed_accuracy"]),
-    ("Closed Macro F1",      zs["closed_macro_f1"],    ft["closed_macro_f1"]),
     ("Recall(No)",           zs["closed_recall_no"],   ft["closed_recall_no"]),
     ("Open Accuracy (≥0.85)", zs["open_accuracy"],      ft["open_accuracy"]),
     ("Open F1 mean",         zs["open_f1_mean"],       ft["open_f1_mean"]),

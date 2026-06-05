@@ -6,7 +6,7 @@ base_model_id = "Qwen/Qwen3.5-2B"
 lora_path = "./checkpoints/Qwen3.5_2B/epoch_3"
 merged_path = "./results/Qwen3.5_2B/merged_model"
 
-# 加载基础模型到 CPU（避免显存不足）
+# load base model to CPU to avoid GPU memory issues during merging
 print("Loading base model...")
 model = AutoModelForImageTextToText.from_pretrained(
     base_model_id,
@@ -14,16 +14,16 @@ model = AutoModelForImageTextToText.from_pretrained(
     device_map="cpu"
 )
 
-# 加载并合并 LoRA
+# load and merge LoRA
 print("Merging LoRA...")
 model = PeftModel.from_pretrained(model, lora_path)
 model = model.merge_and_unload()
 
-# 保存合并后的完整模型
+# save the merged full model
 print("Saving merged model...")
 model.save_pretrained(merged_path)
 
-# 保存 processor（从基础模型复制，但要确保处理参数一致）
+# save processor (copy from base model, but ensure processing parameters are consistent)
 processor = AutoProcessor.from_pretrained(base_model_id)
 processor.save_pretrained(merged_path)
 

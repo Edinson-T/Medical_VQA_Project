@@ -87,7 +87,7 @@ print("=" * 80)
 # ==================== 1. GPU Check ====================
 print("\n[1/6] Checking GPU...")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"✓ Device: {device}")
+print(f"Device: {device}")
 if device.type == "cuda":
     print(f"  GPU : {torch.cuda.get_device_name(0)}")
     print(f"  VRAM: {torch.cuda.get_device_properties(0).total_memory / 1e9:.1f} GB")
@@ -133,7 +133,7 @@ for name, module in model.named_modules():
             module.weight.data = module.weight.data.to(torch.bfloat16)
         if hasattr(module, 'bias') and module.bias is not None:
             module.bias.data = module.bias.data.to(torch.bfloat16)
-print("✓ LayerNorm weights cast to BFloat16")
+print("LayerNorm weights cast to BFloat16")
 
 # Ensure pad token is set (same as QLoRA version)
 processor.tokenizer.pad_token_id = processor.tokenizer.eos_token_id
@@ -142,7 +142,7 @@ model.config.use_cache = False
 trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
 available, total_mem = torch.cuda.mem_get_info()
 model_loaded_used_mb = (total_mem - available) / (1024 ** 2)
-print(f"✓ Model loaded  —  VRAM: {model_loaded_used_mb:.1f} MB  |  "
+print(f"Model loaded  —  VRAM: {model_loaded_used_mb:.1f} MB  |  "
       f"Trainable params: {trainable / 1e6:.2f}M")
 
 # ==================== 3. Dataset ====================
@@ -487,4 +487,4 @@ with open(stats_path, "w") as f:
         "val_losses_epoch":     val_losses_epoch,
         "val_closed_acc":       val_closed_acc_list,
     }, f, indent=2)
-print(f"Stats saved → {stats_path}")
+print(f"Stats saved to {stats_path}")
