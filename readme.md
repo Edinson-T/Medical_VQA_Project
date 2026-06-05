@@ -15,11 +15,11 @@ All models are fine-tuned on [VQA-RAD](https://huggingface.co/datasets/flaviagia
 
 The fine-tuned models demonstrate significant improvements over zero-shot baselines, particularly in clinical reliability.
 
-| Model | Method | Overall Accuracy | Closed-Ended Acc | "No" Recall | Open-Ended BERTScore |
+| Model | Method | Overall Accuracy | Closed-Ended Acc | "No" Recall | Open-Ended Acc |
 | :--- | :--- | :---: | :---: | :---: | :---: |
-| **Qwen3.5-0.8B** | Zero-Shot | 54.0% | 59.9% | 72.1% | - |
+| **Qwen3.5-0.8B** | Zero-Shot | 54.0% | 59.9% | 72.1% | 44.9% |
 | **Qwen3.5-0.8B** | **Fine-tuned** | **58.8%** (+4.9%) | 62.0% | 58.8% | 53.9% |
-| **Qwen3.5-2B** | Zero-Shot | 57.5% | 65.7% | 57.4% | - |
+| **Qwen3.5-2B** | Zero-Shot | 57.5% | 65.7% | 57.4% | 44.9% |
 | **Qwen3.5-2B** | **Fine-tuned** | **64.2%** (+6.6%) | 67.9% | **80.9%** (+23.5%) | **58.4%** |
 <img width="320" height="240" alt="0 8B_accuracy_comparison" src="https://github.com/user-attachments/assets/cff52abf-5594-4e82-a2b4-f4425a77dc29" />
 
