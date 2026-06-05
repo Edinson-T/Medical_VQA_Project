@@ -1,6 +1,6 @@
 # Medical VQA with QLoRA
 
-https://github.com/Edinson-T/Medical_VQA_Project/n
+https://github.com/Edinson-T/Medical_VQA_Project\n
 Fine-tuning vision-language models for radiology Visual Question Answering using QLoRA.  
 
 ---
@@ -16,6 +16,8 @@ All models are fine-tuned on [VQA-RAD](https://huggingface.co/datasets/flaviagia
 ---
 
 ## Repository Structure
+
+```text
 ├── 0.8B/
 │   ├── train_qwen_3_5_0.8B.py       # Training script for Qwen3.5-0.8B
 │   ├── evaluate_qwen_3_5_0.8B.py    # Evaluation script for Qwen3.5-0.8B
