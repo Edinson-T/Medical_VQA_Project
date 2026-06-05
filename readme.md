@@ -21,9 +21,9 @@ The fine-tuned models demonstrate significant improvements over zero-shot baseli
 | **Qwen3.5-0.8B** | **Fine-tuned** | **58.8%** (+4.9%) | 62.0% | 58.8% | 53.9% |
 | **Qwen3.5-2B** | Zero-Shot | 57.5% | 65.7% | 57.4% | - |
 | **Qwen3.5-2B** | **Fine-tuned** | **64.2%** (+6.6%) | 67.9% | **80.9%** (+23.5%) | **58.4%** |
-<img width="960" height="720" alt="0 8B_accuracy_comparison" src="https://github.com/user-attachments/assets/cff52abf-5594-4e82-a2b4-f4425a77dc29" />
+<img width="320" height="240" alt="0 8B_accuracy_comparison" src="https://github.com/user-attachments/assets/cff52abf-5594-4e82-a2b4-f4425a77dc29" />
 
-<img width="960" height="720" alt="2B_accuracy_comparison" src="https://github.com/user-attachments/assets/2d6f4370-91aa-4628-8f5f-548ed5b45a62" />
+<img width="320" height="240" alt="2B_accuracy_comparison" src="https://github.com/user-attachments/assets/2d6f4370-91aa-4628-8f5f-548ed5b45a62" />
 
 
 ## Repository Structure
