@@ -1,6 +1,6 @@
 # Medical VQA with QLoRA
 
-https://github.com/Edinson-T/Medical_VQA_Project
+https://github.com/Edinson-T/Medical_VQA_Project/n
 Fine-tuning vision-language models for radiology Visual Question Answering using QLoRA.  
 
 ---
